@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Desmos Data Collector</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+      <script src="https://www.desmos.com/api/v0.7/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+      <script>var calcState;
+      var myComponent;</script>
+    <style>
+
+
+    .calculator{
+      width: 100%;
+      height: 600px;
+      margin:10px;
+    }
+    input{
+
+      font-size:18px;
+
+    }
+
+    </style>
+
+  </head>
+  <body>
+
+    <div class = "row"><div class = "col-md-6 col-md-offset-3"><h1>Group Data</h1></div></div>
+
+      <div class = "row"><div class = "col-md-8 col-md-offset-2">
+    <div id="container" class = "container">
+
+
+
+
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/3.4.1/firebase.js"></script>
+<script>
+// Initialize Firebase
+var config = {
+apiKey: "AIzaSyD84PBy4Vl0rucfX7lAGj1x8GtPHx8Tqcc",
+authDomain: "groupdata-79beb.firebaseapp.com",
+databaseURL: "https://groupdata-79beb.firebaseio.com",
+storageBucket: "groupdata-79beb.appspot.com",
+messagingSenderId: "486933913407"
+};
+firebase.initializeApp(config);
+database = firebase.database();
+rawData = '';
+</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.3.2/react.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.3.2/react-dom.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.js"></script>
+
+
+    <script type="text/babel">
+
+
+    function writeDataPoint(graphId, userId, point) {
+      var newPoint = {
+    user: userId,
+    point: point
+  };
+  database.ref("graphs/"+graphId).push(newPoint);
+}
+
+
+
+
+
+    var App = React.createClass({
+      getInitialState:function(){
+
+
+        return ({groupData:[{x:0,y:0}],dataSetName:null,graphVisible:false,dataLoaded:false})
+
+
+
+      },
+      render: function () {
+        if(this.state.dataSetName==null){
+          var dataSetNameDisplay = "None";
+        }
+        else{
+          var dataSetNameDisplay = this.state.dataSetName;
+
+        }
+        if(this.state.dataLoaded!=false){
+          var visibleComponent =
+          <div>
+          <StartingPoint setStartingPoint={this.setStartingPoint} parentState={this.state}  setParentState={this.setParentState} updateCalculator={this.updateCalculator} > </StartingPoint>
+
+
+
+            </div>
+
+        }
+        else{
+          var visibleComponent = <div><DataSetChoose setDataName = {this.setDataSetName} parentState={this.state} setParentState={this.setParentState} updateCalculator = {this.updateCalculator} > </DataSetChoose>
+          </div>
+
+        }
+        return (
+          <div>
+
+
+
+          {visibleComponent}
+
+          <div className = "row">
+          <div className = "col-md-6 col-md-offset-3 text-center">
+            <h3>Data-Set Name: <span className = "text-info">{dataSetNameDisplay}</span></h3>
+          </div>
+          </div>
+
+          <DesmosView inputData = {this.state.groupData} setParentState={this.setParentState} visible ={this.state.graphVisible}> </DesmosView>
+
+
+          </div>
+
+        );
+      },
+      setStartingPoint:function(coords){
+
+        this.setState({coordinates:[coords]});
+      },
+      setDataSetName:function(name){
+
+        this.setState({dataSetName:name});
+      },
+      componentDidMount:function(){
+
+      },
+      setParentState:function(object){
+
+        return this.setState(object);
+
+      }
+
+    });
+
+    var DesmosView = React.createClass({
+
+      getInitialState:function(){
+
+        return null
+
+
+      },
+      componentDidMount:function(){
+
+        var calculator = Desmos.Calculator(this.refs.calculator);
+
+
+
+  this.props.setParentState({calc:calculator});
+
+
+},
+      render:function(){
+
+
+  var graphDivClass = "col-md-12 show";
+
+
+        return(
+
+
+<div className = "row">
+  <div className = {graphDivClass}>
+    <div className = "calculator" ref = "calculator"></div>
+    </div>
+</div>
+          )
+
+},
+updateCalculator:function(updateObject){
+  this.state.calculator.setExpression(updateObject);
+
+}
+    });
+
+
+        var StartingPoint = React.createClass({
+          getInitialState:function(){
+
+              return ({x:0,y:0})
+
+
+          },
+
+          render:function(){
+
+            return (
+            <div>
+
+                <div className = "row well">
+                  <div className = "col-md-8 col-md-offset-2 form-horizontal">
+                  <h3>New Point:
+                  (<input type="text" className = ""  ref="x" />
+
+                                          ,
+                 <input type="text" className = ""  ref = "y" />)
+                 </h3>
+                  </div>
+                  <button className = "btn btn-danger" ref = "addPoint" onClick = {this.addPointToData}>Add Point</button>
+                </div>
+
+            </div>
+
+            );
+
+          },
+
+          addPointToData:function(){
+
+            var newPoint = {x:(parseFloat(this.refs.x.value)),y:parseFloat(this.refs.y.value)};
+
+            this.refs.x.value='';
+            this.refs.y.value='';
+
+          writeDataPoint(this.props.parentState.dataSetName,"12345",newPoint)
+          }
+
+        });
+
+
+
+        var DataSetChoose = React.createClass({
+
+          render:function(){
+
+            return(
+              <div>
+              <div className = "row">
+              <div className = "col-md-8 col-md-offset-2">
+              <h3>Enter the name for the data set you want to use:</h3>
+              <input ref = "data_set_name" type = "text" onChange = {this.setDataName} />
+              <button className = "btn btn-primary" onClick={this.getData}>Load Data</button>
+
+              </div>
+              </div>
+
+              <div className = "row">
+              <div className = "col-md-8 col-md-offset-2">
+              <h3>...or create a new data set.</h3>
+
+              <button className = "btn btn-success" onClick = {this.createNewDataSet}>Create Data Set</button>
+
+              </div>
+              </div>
+              </div>
+
+            )
+
+
+
+          },
+          getData:function(object){
+
+
+
+                    var data = database.ref("graphs/"+this.props.parentState.dataSetName+"/");
+
+                    var dataPoints  = []
+                    var setParentState=this.props.setParentState;
+                    var parentState = this.props.parentState;
+                    var parentComponent = this;
+
+                    data.on('value',function(snapshot){
+                        var dataPoints  = []
+
+                        rawData = snapshot.val()
+
+                        if(rawData!=null|object.isNew){
+Object.keys(snapshot.val()).forEach(function(keyName){dataPoints.push(snapshot.val()[keyName].point)});
+
+
+                    //set calculator to have new dataPoints when they are added
+                    var x_values = [];
+                    var y_values = [];
+                    dataPoints.forEach(function(coords){
+                    x_values.push(String(coords.x));
+                    y_values.push(String(coords.y));
+
+
+                    })
+                    var updatedCalculatorObject={
+                    id:'group-data',
+                    type: 'table',
+                    columns: [
+                    {
+                    latex: 'x_1',
+                    values: x_values
+                    },
+                    {
+                    latex: 'y_1',
+                    values: y_values,
+                    dragMode: Desmos.DragModes.XY
+                    }
+                    ]
+                    }
+
+
+                    var calculator = parentState.calc;
+                    calculator.setExpression(updatedCalculatorObject);
+
+                    parentComponent.props.setParentState({groupData:dataPoints,dataLoaded:true,graphVisible:true});
+
+
+                  }//if there is data returned
+                  else{
+
+                    alert("No data set with that name.")
+
+
+                  }
+
+
+
+
+            });
+
+
+
+          },
+          setDataName:function(){
+
+            this.props.setParentState({dataSetName:this.refs.data_set_name.value});
+
+
+          },
+          createNewDataSet:function(){
+
+
+              var dataCode = this.generateCode();
+              this.props.setParentState({dataSetName:dataCode});
+              var data = database.ref("graphs/"+dataCode+"/");
+
+              var dataPoints  = []
+              var setParentState=this.props.setParentState;
+              var parentState = this.props.parentState;
+              var parentComponent = this;
+
+              data.on('value',function(snapshot){
+                  var dataPoints  = []
+
+                  rawData = snapshot.val();
+                  if(rawData!=null){
+
+Object.keys(snapshot.val()).forEach(function(keyName){dataPoints.push(snapshot.val()[keyName].point)});
+              }
+
+              //set calculator to have new dataPoints when they are added
+              var x_values = [];
+              var y_values = [];
+              dataPoints.forEach(function(coords){
+              x_values.push(String(coords.x));
+              y_values.push(String(coords.y));
+
+
+              })
+
+              var updatedCalculatorObject={
+              id:'group-data',
+              type: 'table',
+              columns: [
+              {
+              latex: 'x_1',
+              values: x_values
+              },
+              {
+              latex: 'y_1',
+              values: y_values,
+              dragMode: Desmos.DragModes.XY
+              }
+              ]
+              }
+
+
+              var calculator = parentState.calc;
+              calculator.setExpression(updatedCalculatorObject);
+
+              parentComponent.props.setParentState({groupData:dataPoints,dataLoaded:true,graphVisible:true});
+              console.log(parentState)
+
+            })
+
+
+
+          },
+          generateCode:function(){
+
+var characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+var a = Math.floor(10*Math.random()).toString();
+var b = characters[Math.floor(characters.length*Math.random())];
+var c = characters[Math.floor(characters.length*Math.random())];
+var d = Math.floor(10*Math.random()).toString();
+
+return a+b+c+d;
+
+
+
+          },
+          checkDataSetExists:function(setName){
+            var dataURL = '/graphs/' +setName+"/"
+
+            firebase.database().ref(dataURL).once('value').then(function(snapshot) {
+              return (snapshot.val()===null)
+
+});
+
+
+          }
+
+
+        })
+
+
+myComponent = ReactDOM.render(
+        <App />,
+        document.getElementById('container')
+      );
+
+
+    </script>
+  </body>
+</html>
+
+<script>
+
+</script>
